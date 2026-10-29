@@ -3,29 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Chat Space</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Secure Private Room</title>
+
+    <!-- Firebase SDK (Stable v8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- Jitsi Video Call External API -->
+    <script src="https://meet.jit.si/external_api.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            background-color: #1e293b;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+        .header h2 {
+            font-size: 16px;
+            color: #38bdf8;
+        }
+        .btn-call {
+            background-color: #22c55e;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-call:active {
+            transform: scale(0.95);
+        }
+        .chat-container {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: #0f172a;
+        }
+        .message {
+            background-color: #0284c7;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 12px;
+            max-width: 80%;
+            align-self: flex-end;
+            word-break: break-word;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .input-box {
+            padding: 12px;
+            background-color: #1e293b;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #334155;
+        }
+        .input-box input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background-color: #0f172a;
+            color: white;
+            outline: none;
+            font-size: 14px;
+        }
+        .input-box button {
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 0 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        /* Video Call Fullscreen Modal */
+        #videoModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            flex-direction: column;
+        }
+        #jitsi-container {
+            flex: 1;
+            width: 100%;
+        }
+        .close-call {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <div class="chat-header">
-            <h3>Private Chat 🔒</h3>
-            <select id="user-select">
-                <option value="Me">Me</option>
-                <option value="Her">Her</option>
-            </select>
-        </div>
-
-        <div id="messages-box" class="messages-box"></div>
-
-        <div class="input-area">
-            <input type="text" id="message-input" placeholder="Type a message..." />
-            <button id="send-btn">Send</button>
-        </div>
+    <!-- Header -->
+    <div class="header">
+        <h2>💬 Secure Private Room</h2>
+        <button class="btn-call" onclick="startVideoCall()">📹 Video Call</button>
     </div>
 
-    <!-- JavaScript File Link -->
-    <script type="module" src="script.js"></script>
+    <!-- Chat Messages Section -->
+    <div class="chat-container" id="chatContainer"></div>
+
+    <!-- Message Input Bar -->
+    <div class="input-box">
+        <input type="text" id="messageInput" placeholder="अपना मैसेज लिखें...">
+        <button onclick="sendMessage()">भेजें</button>
+    </div>
+
+    <!-- Video Call Overlay -->
+    <div id="videoModal">
+        <div id="jitsi-container"></div>
+        <button class="close-call" onclick="endVideoCall()">❌ Call Cut Karein (End Call)</button>
+    </div>
+
+    <script>
+        // --- 1. FIREBASE CONFIGURATION ---
+        // Yahan apna asli Firebase Realtime Database URL daalna mat bhoolna!
+        const firebaseConfig = {
+            databaseURL: "https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+
+        // --- 2. SEND MESSAGE FUNCTION ---
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            db.ref('messages/').push({
+                text: text,
+                timestamp: Date.now()
+            }).then(() => {
+                messageInput.value = "";
+            }).catch((error) => {
+                alert("Message Send Error! Database URL check karein.");
+                console.error(error);
+            });
+        }
+
+        // Enter key press support
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // --- 3. REALTIME MESSAGE LISTENER ---
+        db.ref('messages/').on('child_added', (snapshot) => {
+            const data = snapshot.val();
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message';
+            msgDiv.innerText = data.text;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
+
+        // --- 4. VIDEO CALL LOGIC (JITSI MEET) ---
+        let jitsiApi = null;
+
+        function startVideoCall() {
+            const videoModal = document.getElementById('videoModal');
+            videoModal.style.display = 'flex';
+
+            const domain = "meet.jit.si";
+            const options = {
+                roomName: "SecretPrivatePartnerRoom_998877", // Dono ke liye room name bilkul same hona chahiye
+                width: "100%",
+                height: "100%",
+                parentNode: document.querySelector('#jitsi-container'),
+                userInfo: {
+                    displayName: "Private Partner"
+                }
+            };
+
+            try {
+                jitsiApi = new JitsiMeetExternalAPI(domain, options);
+            } catch (err) {
+                alert("Video call load hone me error aayi. Internet connection check karein.");
+                console.error(err);
+            }
+        }
+
+        function endVideoCall() {
+            if (jitsiApi) {
+                jitsiApi.dispose(); // Call disconnect kar dega
+            }
+            document.getElementById('videoModal').style.display = 'none';
+        }
+    </script>
 </body>
-</html>
+    </html>
+    
