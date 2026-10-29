@@ -1,90 +1,164 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-// Tera Firebase Config
+// --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
-  apiKey: "AIzaSyA2XtoNORv4fpPvDxNjQOpzreSiSdMI40M",
-  authDomain: "ourchatapp-5536f.firebaseapp.com",
-  databaseURL: "https://ourchatapp-5536f-default-rtdb.firebaseio.com",
-  projectId: "ourchatapp-5536f",
-  storageBucket: "ourchatapp-5536f.firebasestorage.app",
-  messagingSenderId: "987833778802",
-  appId: "1:987833778802:web:8abaa462fb6b96eef3b8eb"
+    databaseURL: "https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com"
 };
 
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app, "https://ourchatapp-5536f-default-rtdb.firebaseio.com");
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
 
-const messageInput = document.getElementById('message-input');
-const sendBtn = document.getElementById('send-btn');
-const messagesBox = document.getElementById('messages-box');
-const userSelect = document.getElementById('user-select');
+const chatContainer = document.getElementById('chatContainer');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const imageInput = document.getElementById('imageInput');
+const typingIndicator = document.getElementById('typingIndicator');
 
-// Message Send karne ka Function
-function sendMessage() {
-    const text = messageInput.value.trim();
-    const sender = userSelect.value;
-
-    if (text !== '') {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        push(ref(database, 'chats'), {
-            sender: sender,
-            text: text,
-            timestamp: timeString
-        });
-
-        messageInput.value = '';
+// --- FEATURE 1: ENCRYPTION (Safe Text Lock) ---
+function encryptText(text) {
+    return btoa(encodeURIComponent(text));
+}
+function decryptText(encoded) {
+    try {
+        return decodeURIComponent(atob(encoded));
+    } catch (e) {
+        return encoded;
     }
 }
 
-sendBtn.addEventListener('click', sendMessage);
+// --- SEND MESSAGE FUNCTION ---
+function sendMessage(content, type = 'text') {
+    if (!content) return;
+
+    const finalContent = (type === 'text') ? encryptText(content) : content;
+
+    db.ref('messages/').push({
+        content: finalContent,
+        type: type,
+        timestamp: Date.now()
+    }).then(() => {
+        if (type === 'text') messageInput.value = "";
+        db.ref('typing/status').set(false);
+    }).catch((error) => {
+        alert("Firebase Error! Connection check karein.");
+        console.error(error);
+    });
+}
+
+sendBtn.addEventListener('click', () => sendMessage(messageInput.value, 'text'));
 messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
+    if (e.key === 'Enter') sendMessage(messageInput.value, 'text');
 });
 
-// Real-time Message Receive karne ka Function
-onChildAdded(ref(database, 'chats'), (snapshot) => {
-    const data = snapshot.val();
-    const currentUser = userSelect.value;
+// --- FEATURE 2: TYPING INDICATOR ---
+messageInput.addEventListener('input', () => {
+    db.ref('typing/status').set(true);
+});
 
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('msg');
-    
-    if (data.sender === currentUser) {
-        msgDiv.classList.add('me');
+let typingTimeout;
+messageInput.addEventListener('keyup', () => {
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        db.ref('typing/status').set(false);
+    }, 2000);
+});
+
+db.ref('typing/status').on('value', (snapshot) => {
+    if (snapshot.val() === true) {
+        typingIndicator.innerText = "Partner typing...";
     } else {
-        msgDiv.classList.add('her');
+        typingIndicator.innerText = "";
+    }
+});
+
+// --- FEATURE 3: PHOTO SHARING ---
+imageInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        sendMessage(event.target.result, 'image');
+    };
+    reader.readAsDataURL(file);
+});
+
+// --- REALTIME MESSAGES LISTENER ---
+db.ref('messages/').on('child_added', (snapshot) => {
+    const data = snapshot.val();
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message';
+
+    if (data.type === 'image') {
+        msgDiv.innerHTML = `<img src="${data.content}" alt="Shared Image">`;
+    } else {
+        const textContent = data.content ? decryptText(data.content) : decryptText(data.text);
+        msgDiv.innerText = textContent;
     }
 
-    msgDiv.innerHTML = `${data.text} <span class="time">${data.timestamp}</span>`;
-    messagesBox.appendChild(msgDiv);
-    messagesBox.scrollTop = messagesBox.scrollHeight;
+    chatContainer.appendChild(msgDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 });
 
-// Selector change hone par chat view update karne ke liye
-userSelect.addEventListener('change', () => {
-    messagesBox.innerHTML = '';
-    get(child(ref(database), 'chats')).then((snapshot) => {
-        if (snapshot.exists()) {
-            snapshot.forEach((childSnapshot) => {
-                const data = childSnapshot.val();
-                const currentUser = userSelect.value;
+// --- FEATURE 4: SHARED SECRET DIARY ---
+const toggleDiaryBtn = document.getElementById('toggleDiaryBtn');
+const chatSection = document.getElementById('chatSection');
+const diarySection = document.getElementById('diarySection');
+const diaryInput = document.getElementById('diaryInput');
+const saveDiaryBtn = document.getElementById('saveDiaryBtn');
 
-                const msgDiv = document.createElement('div');
-                msgDiv.classList.add('msg');
-                
-                if (data.sender === currentUser) {
-                    msgDiv.classList.add('me');
-                } else {
-                    msgDiv.classList.add('her');
-                }
-
-                msgDiv.innerHTML = `${data.text} <span class="time">${data.timestamp}</span>`;
-                messagesBox.appendChild(msgDiv);
-            });
-            messagesBox.scrollTop = messagesBox.scrollHeight;
-        }
-    });
+let isDiaryOpen = false;
+toggleDiaryBtn.addEventListener('click', () => {
+    isDiaryOpen = !isDiaryOpen;
+    if (isDiaryOpen) {
+        chatSection.style.display = 'none';
+        diarySection.style.display = 'flex';
+        toggleDiaryBtn.innerText = "💬 Chat";
+    } else {
+        chatSection.style.display = 'flex';
+        diarySection.style.display = 'none';
+        toggleDiaryBtn.innerText = "📖 Diary";
+    }
 });
+
+saveDiaryBtn.addEventListener('click', () => {
+    db.ref('diary/content').set(diaryInput.value);
+    alert("Diary Saved!");
+});
+
+db.ref('diary/content').on('value', (snapshot) => {
+    if (snapshot.val() !== null) {
+        diaryInput.value = snapshot.val();
+    }
+});
+
+// --- VIDEO CALL LOGIC ---
+let jitsiApi = null;
+const startCallBtn = document.getElementById('startCallBtn');
+const videoModal = document.getElementById('videoModal');
+const endCallBtn = document.getElementById('endCallBtn');
+
+startCallBtn.addEventListener('click', () => {
+    videoModal.style.display = 'flex';
+    const domain = "meet.jit.si";
+    const options = {
+        roomName: "SecretPrivatePartnerRoom_998877",
+        width: "100%",
+        height: "100%",
+        parentNode: document.querySelector('#jitsi-container')
+    };
+    try {
+        jitsiApi = new JitsiMeetExternalAPI(domain, options);
+    } catch (e) {
+        alert("Video call load hone me error aayi.");
+        console.error(e);
+    }
+});
+
+endCallBtn.addEventListener('click', () => {
+    if (jitsiApi) {
+        jitsiApi.dispose();
+    }
+    videoModal.style.display = 'none';
+});
+  
