@@ -166,7 +166,7 @@ if (db) {
     });
 }
 
-// --- VIDEO CALL ---
+// --- VIDEO CALL (FIXED JITSI CONFIG) ---
 let jitsiApi = null;
 const startCallBtn = document.getElementById('startCallBtn');
 const videoModal = document.getElementById('videoModal');
@@ -175,15 +175,30 @@ const endCallBtn = document.getElementById('endCallBtn');
 if (startCallBtn) {
     startCallBtn.addEventListener('click', () => {
         if (videoModal) videoModal.style.display = 'flex';
+        
         const domain = "meet.jit.si";
         const options = {
-            roomName: "SecretPrivatePartnerRoom_998877",
+            roomName: "OurSecurePrivateRoom12345",
             width: "100%",
             height: "100%",
-            parentNode: document.querySelector('#jitsi-container')
+            parentNode: document.querySelector('#jitsi-container'),
+            configOverwrite: {
+                startWithAudioMuted: false,
+                startWithVideoMuted: false,
+                disableModeratorIndicator: true,
+                enableWelcomePage: false
+            },
+            interfaceConfigOverwrite: {
+                MOBILE_APP_PROMO: false
+            }
         };
+
         try {
-            jitsiApi = new JitsiMeetExternalAPI(domain, options);
+            if (window.JitsiMeetExternalAPI) {
+                jitsiApi = new JitsiMeetExternalAPI(domain, options);
+            } else {
+                alert("Jitsi library load nahi ho payi.");
+            }
         } catch (e) {
             alert("Video call load hone me error aayi.");
             console.error(e);
@@ -198,5 +213,4 @@ if (endCallBtn) {
         }
         if (videoModal) videoModal.style.display = 'none';
     });
-          }
-                                         
+        }
