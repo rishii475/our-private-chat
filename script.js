@@ -1,90 +1,108 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-// Tera Firebase Config
+// --- 1. FIREBASE CONFIGURATION ---
 const firebaseConfig = {
-  apiKey: "AIzaSyA2XtoNORv4fpPvDxNjQOpzreSiSdMI40M",
-  authDomain: "ourchatapp-5536f.firebaseapp.com",
-  databaseURL: "https://ourchatapp-5536f-default-rtdb.firebaseio.com",
-  projectId: "ourchatapp-5536f",
-  storageBucket: "ourchatapp-5536f.firebasestorage.app",
-  messagingSenderId: "987833778802",
-  appId: "1:987833778802:web:8abaa462fb6b96eef3b8eb"
+    databaseURL: "https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com"
 };
 
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app, "https://ourchatapp-5536f-default-rtdb.firebaseio.com");
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
 
-const messageInput = document.getElementById('message-input');
-const sendBtn = document.getElementById('send-btn');
-const messagesBox = document.getElementById('messages-box');
-const userSelect = document.getElementById('user-select');
+const chatContainer = document.getElementById('chatContainer');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
 
-// Message Send karne ka Function
+// --- 2. SEND MESSAGE FUNCTION ---
 function sendMessage() {
     const text = messageInput.value.trim();
-    const sender = userSelect.value;
+    if (!text) return;
 
-    if (text !== '') {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        push(ref(database, 'chats'), {
-            sender: sender,
-            text: text,
-            timestamp: timeString
-        });
-
-        messageInput.value = '';
-    }
+    db.ref('messages/').push({
+        text: text,
+        timestamp: Date.now()
+    }).then(() => {
+        messageInput.value = "";
+    }).catch((error) => {
+        alert("Message Send Error! Database URL check karein.");
+        console.error(error);
+    });
 }
 
-sendBtn.addEventListener('click', sendMessage);
-messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-});
+if (sendBtn) {
+    sendBtn.addEventListener('click', sendMessage);
+}
 
-// Real-time Message Receive karne ka Function
-onChildAdded(ref(database, 'chats'), (snapshot) => {
-    const data = snapshot.val();
-    const currentUser = userSelect.value;
-
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('msg');
-    
-    if (data.sender === currentUser) {
-        msgDiv.classList.add('me');
-    } else {
-        msgDiv.classList.add('her');
-    }
-
-    msgDiv.innerHTML = `${data.text} <span class="time">${data.timestamp}</span>`;
-    messagesBox.appendChild(msgDiv);
-    messagesBox.scrollTop = messagesBox.scrollHeight;
-});
-
-// Selector change hone par chat view update karne ke liye
-userSelect.addEventListener('change', () => {
-    messagesBox.innerHTML = '';
-    get(child(ref(database), 'chats')).then((snapshot) => {
-        if (snapshot.exists()) {
-            snapshot.forEach((childSnapshot) => {
-                const data = childSnapshot.val();
-                const currentUser = userSelect.value;
-
-                const msgDiv = document.createElement('div');
-                msgDiv.classList.add('msg');
-                
-                if (data.sender === currentUser) {
-                    msgDiv.classList.add('me');
-                } else {
-                    msgDiv.classList.add('her');
-                }
-
-                msgDiv.innerHTML = `${data.text} <span class="time">${data.timestamp}</span>`;
-                messagesBox.appendChild(msgDiv);
-            });
-            messagesBox.scrollTop = messagesBox.scrollHeight;
+if (messageInput) {
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
         }
     });
+}
+
+// --- 3. REALTIME MESSAGE LISTENER ---
+db.ref('messages/').on('child_added', (snapshot) => {
+    const data = snapshot.val();
+    if (data && data.text && chatContainer) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message';
+        msgDiv.innerText = data.text;
+        chatContainer.appendChild(msgDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
 });
+
+// --- 4. VIDEO CALL LOGIC (Using meet.ffmuc.net) ---
+let jitsiApi = null;
+const startCallBtn = document.getElementById('startCallBtn');
+const videoModal = document.getElementById('videoModal');
+const endCallBtn = document.getElementById('endCallBtn');
+
+if (startCallBtn) {
+    startCallBtn.addEventListener('click', () => {
+        if (videoModal) {
+            videoModal.style.display = 'flex';
+        }
+
+        const domain = "meet.ffmuc.net";
+        const options = {
+            roomName: "SecretPrivatePartnerRoom_998877",
+            width: "100%",
+            height: "100%",
+            parentNode: document.querySelector('#jitsi-container'),
+            userInfo: {
+                displayName: "Private Partner"
+            },
+            configOverwrite: {
+                startWithAudioMuted: false,
+                startWithVideoMuted: false
+            },
+            interfaceConfigOverwrite: {
+                MOBILE_APP_PROMO: false
+            }
+        };
+
+        try {
+            if (typeof JitsiMeetExternalAPI !== 'undefined') {
+                jitsiApi = new JitsiMeetExternalAPI(domain, options);
+            } else {
+                alert("Jitsi library load nahi ho paayi. Internet connection check karein.");
+            }
+        } catch (e) {
+            alert("Video call load hone me error aayi.");
+            console.error(e);
+        }
+    });
+}
+
+if (endCallBtn) {
+    endCallBtn.addEventListener('click', () => {
+        if (jitsiApi) {
+            jitsiApi.dispose();
+            jitsiApi = null;
+        }
+        if (videoModal) {
+            videoModal.style.display = 'none';
+        }
+    });
+              }
