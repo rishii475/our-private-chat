@@ -2,45 +2,58 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 body {
-    background: #0f172a;
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-.chat-container {
-    width: 100%;
-    max-width: 420px;
-    height: 90vh;
-    background: #1e293b;
-    border-radius: 16px;
+    background-color: #0f172a;
+    color: #f8fafc;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    height: 100vh;
 }
-.chat-header {
-    background: #0f172a;
-    color: #fff;
-    padding: 15px;
+.header {
+    background-color: #1e293b;
+    padding: 12px 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #334155;
 }
-.chat-header select {
-    background: #334155;
-    color: #fff;
+.header h2 {
+    font-size: 16px;
+    color: #38bdf8;
+}
+.header-btns {
+    display: flex;
+    gap: 8px;
+}
+.btn-call {
+    background-color: #22c55e;
+    color: white;
     border: none;
     padding: 6px 12px;
     border-radius: 6px;
-    outline: none;
     font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
 }
-.messages-box {
+.btn-tab {
+    background-color: #334155;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+}
+.main-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.chat-container {
     flex: 1;
     padding: 15px;
     overflow-y: auto;
@@ -48,52 +61,114 @@ body {
     flex-direction: column;
     gap: 10px;
 }
-.msg {
-    max-width: 75%;
+.message {
+    background-color: #0284c7;
+    color: white;
     padding: 10px 14px;
     border-radius: 12px;
-    color: #fff;
-    font-size: 14px;
-    word-wrap: break-word;
-}
-.msg.me {
+    max-width: 80%;
     align-self: flex-end;
-    background: #2563eb;
-    border-bottom-right-radius: 2px;
+    word-break: break-word;
+    font-size: 14px;
 }
-.msg.her {
-    align-self: flex-start;
-    background: #334155;
-    border-bottom-left-radius: 2px;
-}
-.time {
-    font-size: 10px;
-    color: #cbd5e1;
-    display: block;
-    margin-top: 4px;
-    text-align: right;
-}
-.input-area {
-    display: flex;
-    padding: 10px;
-    background: #0f172a;
-    gap: 8px;
-}
-.input-area input {
-    flex: 1;
-    padding: 12px;
-    border: none;
+.message img {
+    max-width: 100%;
     border-radius: 8px;
-    background: #1e293b;
-    color: #fff;
-    outline: none;
+    margin-top: 5px;
 }
-.input-area button {
-    background: #2563eb;
-    color: #fff;
+.typing-indicator {
+    padding: 0 15px;
+    font-size: 12px;
+    color: #38bdf8;
+    height: 18px;
+    font-style: italic;
+}
+.input-box {
+    padding: 10px 12px;
+    background-color: #1e293b;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-top: 1px solid #334155;
+}
+.btn-file {
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 5px;
+}
+.input-box input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    background-color: #0f172a;
+    color: white;
+    outline: none;
+    font-size: 14px;
+}
+.input-box button {
+    background-color: #38bdf8;
+    color: #0f172a;
     border: none;
-    padding: 0 18px;
+    padding: 10px 16px;
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
 }
+/* Secret Diary Styling */
+.diary-container {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background-color: #0f172a;
+}
+.diary-container h3 {
+    color: #38bdf8;
+}
+.diary-container textarea {
+    flex: 1;
+    background-color: #1e293b;
+    color: white;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 15px;
+    font-size: 14px;
+    resize: none;
+    outline: none;
+}
+.diary-container button {
+    background-color: #22c55e;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+#videoModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    flex-direction: column;
+}
+#jitsi-container {
+    flex: 1;
+    width: 100%;
+}
+.close-call {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    padding: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+    text-align: center;
+    }
