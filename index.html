@@ -3,29 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Chat Space</title>
+    <title>Secure Private Room</title>
+    <!-- CSS File Link -->
     <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK (Stable v8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- Jitsi Video Call External API -->
+    <script src="https://meet.jit.si/external_api.js"></script>
 </head>
 <body>
 
-    <div class="chat-container">
-        <div class="chat-header">
-            <h3>Private Chat 🔒</h3>
-            <select id="user-select">
-                <option value="Me">Me</option>
-                <option value="Her">Her</option>
-            </select>
-        </div>
+    <!-- Header -->
+    <div class="header">
+        <h2>💬 Secure Private Room</h2>
+        <button class="btn-call" id="startCallBtn">📹 Video Call</button>
+    </div>
 
-        <div id="messages-box" class="messages-box"></div>
+    <!-- Chat Messages Section -->
+    <div class="chat-container" id="chatContainer"></div>
 
-        <div class="input-area">
-            <input type="text" id="message-input" placeholder="Type a message..." />
-            <button id="send-btn">Send</button>
-        </div>
+    <!-- Message Input Bar -->
+    <div class="input-box">
+        <input type="text" id="messageInput" placeholder="अपना मैसेज लिखें...">
+        <button id="sendBtn">भेजें</button>
+    </div>
+
+    <!-- Video Call Overlay -->
+    <div id="videoModal">
+        <div id="jitsi-container"></div>
+        <button class="close-call" id="endCallBtn">❌ Call Cut Karein (End Call)</button>
     </div>
 
     <!-- JavaScript File Link -->
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
