@@ -3,29 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Chat Space</title>
+    <title>Secure Private Room Pro</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK (v8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- Jitsi Video Call API -->
+    <script src="https://meet.jit.si/external_api.js"></script>
 </head>
 <body>
 
-    <div class="chat-container">
-        <div class="chat-header">
-            <h3>Private Chat 🔒</h3>
-            <select id="user-select">
-                <option value="Me">Me</option>
-                <option value="Her">Her</option>
-            </select>
-        </div>
-
-        <div id="messages-box" class="messages-box"></div>
-
-        <div class="input-area">
-            <input type="text" id="message-input" placeholder="Type a message..." />
-            <button id="send-btn">Send</button>
+    <!-- Header -->
+    <div class="header">
+        <h2>💬 Secure Private Room</h2>
+        <div class="header-btns">
+            <button class="btn-tab" id="toggleDiaryBtn">📖 Diary</button>
+            <button class="btn-call" id="startCallBtn">📹 Call</button>
         </div>
     </div>
 
-    <!-- JavaScript File Link -->
-    <script type="module" src="script.js"></script>
+    <!-- MAIN CHAT SECTION -->
+    <div class="main-container" id="chatSection">
+        <div class="chat-container" id="chatContainer"></div>
+        <div class="typing-indicator" id="typingIndicator"></div>
+
+        <!-- Input Bar with Image & Text -->
+        <div class="input-box">
+            <label for="imageInput" class="btn-file">📷</label>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            <input type="text" id="messageInput" placeholder="मैसेज टाइप करें...">
+            <button id="sendBtn">भेजें</button>
+        </div>
+    </div>
+
+    <!-- SHARED SECRET DIARY SECTION -->
+    <div class="diary-container" id="diarySection" style="display: none;">
+        <h3>🔐 Shared Secret Diary</h3>
+        <textarea id="diaryInput" placeholder="यहाँ तुम दोनों अपनी बातें या प्लान्स लिख सकते हो..."></textarea>
+        <button id="saveDiaryBtn">डायरी सेव करें</button>
+    </div>
+
+    <!-- Video Call Overlay -->
+    <div id="videoModal">
+        <div id="jitsi-container"></div>
+        <button class="close-call" id="endCallBtn">❌ Call Cut Karein</button>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
