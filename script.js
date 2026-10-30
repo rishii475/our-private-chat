@@ -14,13 +14,25 @@ try {
     console.error("Firebase Init Error: ", e);
 }
 
+// Automatic Unique Device ID (Taaki alag-alag phone me left/right chat sahi dikhe)
+let myDeviceId = localStorage.getItem('device_unique_id');
+if (!myDeviceId) {
+    myDeviceId = 'dev_' + Math.random().toString(36).substring(2, 9);
+    localStorage.setItem('device_unique_id', myDeviceId);
+}
+
 const chatContainer = document.getElementById('chatContainer');
 const messageInput = document.getElementById('messageInput');
 const sendBtn = document.getElementById('sendBtn');
 const imageInput = document.getElementById('imageInput');
 const typingIndicator = document.getElementById('typingIndicator');
+const replyBanner = document.getElementById('replyBanner');
+const replyTextPreview = document.getElementById('replyTextPreview');
+const cancelReplyBtn = document.getElementById('cancelReplyBtn');
 
-// Simple Text Encryption
+let replyingTo = null;
+
+// Encryption Helpers
 function encryptText(text) {
     return btoa(encodeURIComponent(text));
 }
@@ -43,14 +55,17 @@ function sendMessage(content, type = 'text') {
     const finalContent = (type === 'text') ? encryptText(content) : content;
 
     db.ref('private_chat_room/messages').push({
+        sender: myDeviceId,
         content: finalContent,
         type: type,
+        replyTo: replyingTo ? replyingTo : null,
         timestamp: Date.now()
     }).then(() => {
         if (type === 'text') messageInput.value = "";
+        cancelReply();
         db.ref('private_chat_room/typing').set(false);
     }).catch((error) => {
-        alert("Message send nahi ho paya. Rules check karein.");
+        alert("Message send nahi ho paya.");
         console.error(error);
     });
 }
@@ -62,6 +77,16 @@ if (messageInput) {
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage(messageInput.value, 'text');
     });
+}
+
+if (cancelReplyBtn) {
+    cancelReplyBtn.addEventListener('click', cancelReply);
+}
+
+function cancelReply() {
+    replyingTo = null;
+    if (replyBanner) replyBanner.style.display = 'none';
+    if (replyTextPreview) replyTextPreview.innerText = "";
 }
 
 // --- TYPING INDICATOR ---
@@ -105,30 +130,71 @@ if (imageInput) {
     });
 }
 
-// --- REALTIME MESSAGE LISTENER ---
+// --- REALTIME MESSAGES ---
 if (db) {
     db.ref('private_chat_room/messages').on('child_added', (snapshot) => {
         const data = snapshot.val();
+        const msgKey = snapshot.key;
         if (!data) return;
 
         const msgDiv = document.createElement('div');
-        msgDiv.className = 'message';
-
-        if (data.type === 'image') {
-            msgDiv.innerHTML = `<img src="${data.content}" alt="Image">`;
+        msgDiv.id = 'msg_' + msgKey;
+        
+        // Left/Right alignment check
+        if (data.sender === myDeviceId) {
+            msgDiv.className = 'message sent';
         } else {
-            const textContent = data.content ? decryptText(data.content) : "";
-            msgDiv.innerText = textContent;
+            msgDiv.className = 'message received';
         }
 
+        let innerHTML = '';
+        if (data.replyTo) {
+            innerHTML += `<div style="font-size:11px; background:rgba(0,0,0,0.2); padding:4px 6px; border-radius:4px; margin-bottom:4px;">↳ ${data.replyTo}</div>`;
+        }
+
+        if (data.type === 'image') {
+            innerHTML += `<img src="${data.content}" alt="Image">`;
+        } else {
+            const textContent = data.content ? decryptText(data.content) : "";
+            innerHTML += `<span>${textContent}</span>`;
+        }
+
+        innerHTML += `<div class="msg-actions">
+            <span onclick="triggerReply('${msgKey}', '${data.type === 'text' ? decryptText(data.content) : 'Photo'}')">Reply</span>`;
+        
+        if (data.sender === myDeviceId) {
+            innerHTML += `<span onclick="unsendMessage('${msgKey}')">Unsend</span>`;
+        }
+        innerHTML += `</div>`;
+
+        msgDiv.innerHTML = innerHTML;
         if (chatContainer) {
             chatContainer.appendChild(msgDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
     });
+
+    db.ref('private_chat_room/messages').on('child_removed', (snapshot) => {
+        const msgKey = snapshot.key;
+        const msgElement = document.getElementById('msg_' + msgKey);
+        if (msgElement) {
+            msgElement.remove();
+        }
+    });
 }
 
-// --- SHARED SECRET DIARY ---
+window.unsendMessage = function(msgKey) {
+    db.ref('private_chat_room/messages/' + msgKey).remove();
+};
+
+window.triggerReply = function(msgKey, text) {
+    replyingTo = text;
+    if (replyTextPreview) replyTextPreview.innerText = "Replying to: " + text;
+    if (replyBanner) replyBanner.style.display = 'flex';
+    if (messageInput) messageInput.focus();
+};
+
+// --- DIARY ---
 const toggleDiaryBtn = document.getElementById('toggleDiaryBtn');
 const chatSection = document.getElementById('chatSection');
 const diarySection = document.getElementById('diarySection');
@@ -166,7 +232,7 @@ if (db) {
     });
 }
 
-// --- VIDEO CALL (FIXED JITSI CONFIG) ---
+// --- VIDEO CALL ---
 let jitsiApi = null;
 const startCallBtn = document.getElementById('startCallBtn');
 const videoModal = document.getElementById('videoModal');
@@ -213,4 +279,5 @@ if (endCallBtn) {
         }
         if (videoModal) videoModal.style.display = 'none';
     });
-        }
+}
+    
