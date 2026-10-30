@@ -61,6 +61,8 @@ body {
     flex-direction: column;
     gap: 10px;
 }
+
+/* Message Bubbles - Left/Right Alignment */
 .message {
     padding: 10px 14px;
     border-radius: 12px;
@@ -100,6 +102,8 @@ body {
     cursor: pointer;
     text-decoration: underline;
 }
+
+/* Reply Banner */
 #replyBanner {
     background-color: #1e293b;
     padding: 8px 12px;
@@ -117,6 +121,7 @@ body {
     cursor: pointer;
     font-size: 14px;
 }
+
 .typing-indicator {
     padding: 0 15px;
     font-size: 12px;
