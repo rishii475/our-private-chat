@@ -62,19 +62,60 @@ body {
     gap: 10px;
 }
 .message {
-    background-color: #0284c7;
-    color: white;
     padding: 10px 14px;
     border-radius: 12px;
     max-width: 80%;
-    align-self: flex-end;
     word-break: break-word;
     font-size: 14px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.message.sent {
+    background-color: #0284c7;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+}
+.message.received {
+    background-color: #334155;
+    color: #f8fafc;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
 }
 .message img {
     max-width: 100%;
     border-radius: 8px;
     margin-top: 5px;
+}
+.msg-actions {
+    display: flex;
+    gap: 10px;
+    font-size: 11px;
+    margin-top: 4px;
+    opacity: 0.8;
+}
+.msg-actions span {
+    cursor: pointer;
+    text-decoration: underline;
+}
+#replyBanner {
+    background-color: #1e293b;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #38bdf8;
+    font-size: 13px;
+    color: #38bdf8;
+}
+#replyBanner button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
 }
 .typing-indicator {
     padding: 0 15px;
@@ -115,7 +156,6 @@ body {
     font-weight: bold;
     cursor: pointer;
 }
-/* Secret Diary Styling */
 .diary-container {
     flex: 1;
     padding: 20px;
@@ -172,3 +212,4 @@ body {
     font-size: 16px;
     text-align: center;
     }
+    
