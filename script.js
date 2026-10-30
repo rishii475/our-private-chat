@@ -14,7 +14,7 @@ try {
     console.error("Firebase Init Error: ", e);
 }
 
-// Automatic Unique Device ID (Taaki alag-alag phone me left/right chat sahi dikhe)
+// Unique Device ID for proper Sent/Received alignment
 let myDeviceId = localStorage.getItem('device_unique_id');
 if (!myDeviceId) {
     myDeviceId = 'dev_' + Math.random().toString(36).substring(2, 9);
@@ -130,7 +130,7 @@ if (imageInput) {
     });
 }
 
-// --- REALTIME MESSAGES ---
+// --- REALTIME MESSAGES SYNC ---
 if (db) {
     db.ref('private_chat_room/messages').on('child_added', (snapshot) => {
         const data = snapshot.val();
@@ -140,7 +140,7 @@ if (db) {
         const msgDiv = document.createElement('div');
         msgDiv.id = 'msg_' + msgKey;
         
-        // Left/Right alignment check
+        // Sender check: Agar tera device hai toh 'sent' (right), warna 'received' (left)
         if (data.sender === myDeviceId) {
             msgDiv.className = 'message sent';
         } else {
@@ -194,7 +194,7 @@ window.triggerReply = function(msgKey, text) {
     if (messageInput) messageInput.focus();
 };
 
-// --- DIARY ---
+// --- SHARED SECRET DIARY ---
 const toggleDiaryBtn = document.getElementById('toggleDiaryBtn');
 const chatSection = document.getElementById('chatSection');
 const diarySection = document.getElementById('diarySection');
